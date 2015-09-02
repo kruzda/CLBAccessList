@@ -30,6 +30,7 @@ Install this via the dashboard and set it to active.
 
 ```php
 define('WP_FAIL2BAN_AUTH_LOG',LOG_AUTHPRIV);
+define('WP_FAIL2BAN_LOG_PINGBACKS',true);
 define('WP_FAIL2BAN_PROXIES','127.0.0.1');
 ```
 **Note, you may need to change 127.0.0.1 / add additonal IP addresses**
@@ -53,6 +54,8 @@ define('WP_FAIL2BAN_PROXIES','127.0.0.1');
   - Restart fail2ban
     - service fail2ban restart 
 
+We've not configured Wordpress to block any IP address which fails to login / sends a XMLRPC pingback more than 3 times within 2 minutes. The ban will last an hour by default.
 
+**Note This was tested on Ubuntu 14.04 / fail2ban v0.8.11. This was tested on a setup with only one Website - this may have a negative impact on servers hosting more than one Wordpress site - will look for ways to combat this in the future**
 
 -Blake
