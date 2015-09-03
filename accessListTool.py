@@ -35,10 +35,12 @@ if not all(key for key in [username, api_key, lb_id, region]):
 # These dont really change
 headers = {"Content-Type": "application/json"}
 auth_url = "https://identity.api.rackspacecloud.com/v2.0/tokens"
+region = region.upper()
 
-
-# a fuction to print usage
 def usage():
+    """
+    Just prints the usage of the script.
+    """
     print "Usage: %s [--list] [--delete-everything] | [--add] [--delete] <12" \
         "3.45.67.89>" % sys.argv[0]
     print "-a|-A|--add <IP Address>         - Add an IP address to your " \
@@ -51,16 +53,20 @@ def usage():
     exit(1)
 
 
-# Error message for if we don't get the expected http code
 def api_fail(message, status_code, origin):
+    """
+    Error message for if we don't get the expected http code
+    """
     print "An API error has occured whilst running '%s'. Status code: %s" \
         % (origin, status_code)
     print message
     exit(1)
 
 
-# Get serviceCatalog / Authentication details
 def service_catalog():
+    """
+    Get serviceCatalog / Authentication details
+    """
     data = {
         "auth":
         {
@@ -82,14 +88,18 @@ def service_catalog():
     return result.json()
 
 
-# Get Authentication token
 def get_token(auth_data):
+    """
+    Get Authentication token
+    """
     auth_token = auth_data.get("access").get("token").get("id")
     return auth_token
 
 
-# Get LB endpoint for the correct region
 def get_endpoint(auth_data):
+    """
+    Get LB endpoint for the correct region
+    """
     lb_endpoint = None
     for service in auth_data.get("access").get("serviceCatalog"):
         if service.get("name") == "cloudLoadBalancers":
@@ -130,9 +140,12 @@ def retry(ExceptionToCheck=PendingError, retries=5, delay=2):
     return retry_decorator
 
 
-# Add an IP address to the Load Balancers access list.
 @retry()
 def add_ban(url):
+    """
+    Add an IP address to the Load Balancers access list, if it's not in PENDING
+    status
+    """
     deny_data = {
         "accessList": [
             {
@@ -150,9 +163,12 @@ def add_ban(url):
     print "Success. %s added to ban" % sys.argv[2]
 
 
-# Remove an IP address from the Load Balancers access list.
 @retry()
 def delete_ban(url):
+    """
+    Remove an IP address from the Load Balancers access list, if it's not in
+    PENDING status
+    """
     result = requests.get(url, headers=headers)
     network_id = None
     for address in result.json().get("accessList"):
@@ -172,8 +188,10 @@ def delete_ban(url):
     print "Success. %s has been unbanned" % sys.argv[2]
 
 
-# List all current rules on the access list
 def list_rules(url):
+    """
+    List all current rules on the access list
+    """
     result = requests.get(url, headers=headers)
     if result.status_code not in [202, 200]:
         api_fail(result.text, result.status_code, "list_rules")
@@ -182,9 +200,11 @@ def list_rules(url):
         print json.dumps(address)
 
 
-# Delete allthethings
 @retry()
 def delete_all_rules(url):
+    """
+    Delete allthethings
+    """
     result = requests.delete(url, headers=headers)
     if result.status_code == 422:
         raise PendingError("")
