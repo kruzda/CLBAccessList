@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 ############################################################################
 # Author: Blake Moore 2015                                                 #
+# Contributors: Erik Ljungstrom                                            #
 ###########################################################################
 # Description: This script is designed to manage your access list on       #
 # a Rackspace cloud server.                                                #
@@ -11,24 +12,26 @@
 import requests
 import json
 import sys
+import time
+from functools import wraps
 
 # The below variables need to be set before running this script.
 
-# Your Rackspace username
-username = "USERNAME_HERE"
+username = ""
+api_key = ""
+lb_id = ""
+region = ""
 
-# Your Rackspace API key
-api_key = "APY_KEY_HERE"
+try:
+    from credentials import username, api_key, lb_id, region
+except ImportError:
+    pass
 
-# Your Load Balancer ID
-lb_id = "LOAD_BALANCER_ID_HERE"
+if not all(key for key in [username, api_key, lb_id, region]):
+    print "Make sure you have provided all required credentials"\
+          " by editing %s" % sys.argv[0]
+    exit(1)
 
-# The region the Load Balancer is situated
-region = "REGION"
-
-#
-#
-#
 # These dont really change
 headers = {"Content-Type": "application/json"}
 auth_url = "https://identity.api.rackspacecloud.com/v2.0/tokens"
@@ -101,7 +104,34 @@ def get_endpoint(auth_data):
     return lb_endpoint
 
 
+class PendingError(Exception):
+    def __init__(self, message):
+        super(PendingError, self).__init__(message)
+
+
+def retry(ExceptionToCheck=PendingError, retries=5, delay=2):
+    def retry_decorator(f):
+        @wraps(f)
+        def retry_deco(*args, **kwargs):
+            _retries = retries
+            while _retries:
+                try:
+                    return f(*args, **kwargs)
+                except ExceptionToCheck:
+                    print "Load balancer is in a pending state,"\
+                          " waiting %d second%s. %d retries remaining." % (
+                              delay,
+                              "" if delay == 1 else "s",
+                              _retries)
+                    _retries -= 1
+                    time.sleep(delay)
+            return f(*args, **kwargs)
+        return retry_deco
+    return retry_decorator
+
+
 # Add an IP address to the Load Balancers access list.
+@retry()
 def add_ban(url):
     deny_data = {
         "accessList": [
@@ -112,13 +142,16 @@ def add_ban(url):
         ]
     }
     result = requests.post(url, headers=headers, data=json.dumps(deny_data))
-    if result.status_code not in [202, 200]:
+    if result.status_code == 422:
+        raise PendingError("")
+    elif result.status_code not in [202, 200]:
         api_fail(result.text, result.status_code, "add_ban")
 
     print "Success. %s added to ban" % sys.argv[2]
 
 
 # Remove an IP address from the Load Balancers access list.
+@retry()
 def delete_ban(url):
     result = requests.get(url, headers=headers)
     network_id = None
@@ -131,7 +164,9 @@ def delete_ban(url):
         exit(1)
     url = "%s/%s" % (url, network_id)
     result = requests.delete(url, headers=headers)
-    if result.status_code not in [202, 200]:
+    if result.status_code == 422:
+        raise PendingError("")
+    elif result.status_code not in [202, 200]:
         api_fail(result.text, result.status_code, "delete_ban")
 
     print "Success. %s has been unbanned" % sys.argv[2]
@@ -148,9 +183,12 @@ def list_rules(url):
 
 
 # Delete allthethings
+@retry()
 def delete_all_rules(url):
     result = requests.delete(url, headers=headers)
-    if result.status_code not in [202, 200]:
+    if result.status_code == 422:
+        raise PendingError("")
+    elif result.status_code not in [202, 200]:
         api_fail(result.text, result.status_code, "delete_all_rules")
     print result.status_code
 
