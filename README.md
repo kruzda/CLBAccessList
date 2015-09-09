@@ -20,26 +20,7 @@ I've added a few extra options to manage all access list operations.
 
 If you'd like to protect wordpress from bruteforce attacks on wp-login.php and pingback requests, follow the below guide.
 
-###Step 1
-- Install [WP-fail2ban](https://wordpress.org/plugins/wp-fail2ban/)
-
-Install this via the dashboard and set it to active.
-
-###Step 2
-- Edit wp-config.php file with the below lines:
-
-```php
-define('WP_FAIL2BAN_AUTH_LOG',LOG_AUTHPRIV);
-define('WP_FAIL2BAN_LOG_PINGBACKS',true);
-define('WP_FAIL2BAN_PROXIES','127.0.0.1');
-```
-**Note, you may need to change 127.0.0.1 / add additional IP addresses**
-**The idea here is to list the IP addresses of the trusted proxies that will appear as the remote IP for the request. When defined:**
-* If the remote address appears in the `WP_FAIL2BAN_PROXIES` list, *WPf2b* will log the IP address from the `X-Forwarded-For` header.
-* If the remote address does not appear in the `WP_FAIL2BAN_PROXIES` list, *WPf2b* will return a 403 error.
-* If there's no X-Forwarded-For header, *WPf2b* will behave as if `WP_FAIL2BAN_PROXIES` isn't defined.
-
-###Step 3 
+###Step 1 
 - Configure fail2ban
 
   - Configure a filter | **_This tails fail2ban what to look for in a log file_**
