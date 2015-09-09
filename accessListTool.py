@@ -2,7 +2,7 @@
 ############################################################################
 # Author: Blake Moore 2015                                                 #
 # Contributors: Erik Ljungstrom                                            #
-###########################################################################
+############################################################################
 # Description: This script is designed to manage your access list on       #
 # a Rackspace cloud server.                                                #
 # It was iniitally built with the idea of adding into fail2ban to block    #
@@ -15,7 +15,8 @@ import sys
 import time
 from functools import wraps
 
-# The below variables need to be set before running this script.
+# If your credentials are not set in a credentials.py file, you need to fill
+# out the below, if they are, you can leave the below.
 
 username = ""
 api_key = ""
