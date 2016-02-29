@@ -38,5 +38,3 @@ If you'd like to protect wordpress from bruteforce attacks on wp-login.php and p
 We've not configured Wordpress to block any IP address which fails to login / sends a XMLRPC pingback more than 3 times within 2 minutes. The ban will last an hour by default.
 
 **Note This was tested on Ubuntu 14.04 / fail2ban v0.8.11. This was tested on a setup with only one Website - this may have a negative impact on servers hosting more than one Wordpress site - will look for ways to combat this in the future**
-
--Blake
